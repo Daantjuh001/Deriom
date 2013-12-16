@@ -1,5 +1,4 @@
-function Player(world, x, y) {
-	this.world = world;
+function Player(x, y) {
 	this.x = x;
 	this.y = y;
 }

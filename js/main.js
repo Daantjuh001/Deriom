@@ -1,70 +1,108 @@
 (function() {
-	var canvasElement, canvasWidth, canvasHeight, canvas, loadedItems, keysPressed, world, player, players;
+	var canvasElement, canvasWidth, canvasHeight, canvas, connected, players, socket;
+	var keysPressed, world, pid;
 
 	window.onload = function() {
-	     init();
-	}
-
-	window.onkeydown = function(event) {
-		keysPressed[event.keyCode] = true;
-	}
-
-	window.onkeyup = function(event) {
-		keysPressed[event.keyCode] = false;
-	}
-
-	function init() {
 		canvasElement = document.getElementById("game");
 		canvasWidth = canvasElement.offsetWidth;
 		canvasHeight = canvasElement.offsetHeight;
 		canvas = canvasElement.getContext("2d");
-		loadedItems = 0;
-		keysPressed = [];
-
-		world = new World(10, 10);
-		player = new Player("main", 32, 32);
+		connected = false;
 		players = [];
 
-		if (loadedItems == 0) {
-			setInterval(function() {
-				tick();
-			}, 500 / 60);
+		setInterval(function() {
+			tick();
+		}, 500 / 60);
 
-			setInterval(function() {
-				render();
-			}, 1000 / 60);
-		}
+		setInterval(function() {
+			render();
+		}, 1000 / 60);
+
+		connect();
+	}
+
+	function connect() {
+		socket = io.connect("http://danielvandrunen.com:1337");
+	
+		socket.on("connect", function() {
+			socket.emit("connect");
+		});
+
+		socket.on("connected", function(data) {
+			init(data.pid, data.x, data.y);
+		});
+
+		socket.on("join", function(data) {
+			players[data.pid] = new Player(data.x, data.y);
+		});
+
+		socket.on("move", function(data) {
+			players[data.pid].x = data.x;
+			players[data.pid].y = data.y;
+		});
+
+		socket.on("leave", function(data) {
+			players.splice(data.pid, 1);
+		});
+	}
+
+	function init(temppid, x, y) {
+		keysPressed = [];
+		world = new World(10, 10);
+		pid = temppid;
+
+		players[pid] = new Player(x, y);
+
+		connected = true;
 	}
 
 	function tick() {
-		world.tick();
+		if (connected) {
+			world.tick();
 
-		if(typeof keysPressed[87] !== "undefined" && keysPressed[87] != false){
-			player.y -= 1;
-		}else if(typeof keysPressed[83] !== "undefined" && keysPressed[83] != false){
-			player.y += 1;
-		}else if(typeof keysPressed[65] !== "undefined" && keysPressed[65] != false){
-			player.x -= 1;
-		}else if(typeof keysPressed[68] !== "undefined" && keysPressed[68] != false){
-			player.x += 1;
+			if (typeof keysPressed[87] !== "undefined" && keysPressed[87] != false) {
+				players[pid].y -= 1;
+				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+			} else if (typeof keysPressed[83] !== "undefined" && keysPressed[83] != false) {
+				players[pid].y += 1;
+				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+			} else if (typeof keysPressed[65] !== "undefined" && keysPressed[65] != false) {
+				players[pid].x -= 1;
+				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+			} else if (typeof keysPressed[68] !== "undefined" && keysPressed[68] != false) {
+				players[pid].x += 1;
+				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+			}
+
+			for (var i in players) {
+				players[i].tick();
+			}
 		}
-
-		for (var i in players) {
-			players[i].tick();
-		}
-
-		player.tick();
 	}
 
 	function render() {
 		canvas.clearRect(0, 0, canvasWidth, canvasHeight);
 
-		world.render(canvas);
+		if (connected) {
+			world.render(canvas);
 
-		for (var i in players) {
-			players[i].render(canvas);
+			for (var i in players) {
+				players[i].render(canvas);
+			}
+		} else {
+			canvas.fillText("Connecting...", 100, 100);
 		}
-
-		player.render(canvas);
 	}
+
+	window.onkeydown = function(event) {
+		if (connected) {
+			keysPressed[event.keyCode] = true;
+		}
+	}
+
+	window.onkeyup = function(event) {
+		if (connected) {
+			keysPressed[event.keyCode] = false;
+		}
+	}	
 })();

@@ -2,7 +2,7 @@
 
 <html>
 	<head>
-		<!--<script src="http://danielvandrunen.com:1337/socket.io/socket.io.js"></script>-->
+		<script src="http://danielvandrunen.com:1337/socket.io/socket.io.js"></script>
 	</head>
 	<body>
 		<canvas id="game" width="960" height="560"></canvas>
