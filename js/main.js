@@ -42,17 +42,15 @@
 		});
 
 		socket.on("leave", function(data) {
-			players.splice(data.pid, 1);
+			delete players[data.pid];
 		});
 	}
 
 	function init(temppid, x, y) {
 		keysPressed = [];
-		world = new World(10, 10);
+		world = new World(30, 17.5);
 		pid = temppid;
-
 		players[pid] = new Player(x, y);
-
 		connected = true;
 	}
 
@@ -62,16 +60,16 @@
 
 			if (typeof keysPressed[87] !== "undefined" && keysPressed[87] != false) {
 				players[pid].y -= 1;
-				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+				socket.emit("move", { pid: pid, x: players[pid].x, y: players[pid].y });
 			} else if (typeof keysPressed[83] !== "undefined" && keysPressed[83] != false) {
 				players[pid].y += 1;
-				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+				socket.emit("move", { pid: pid, x: players[pid].x, y: players[pid].y });
 			} else if (typeof keysPressed[65] !== "undefined" && keysPressed[65] != false) {
 				players[pid].x -= 1;
-				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+				socket.emit("move", { pid: pid, x: players[pid].x, y: players[pid].y });
 			} else if (typeof keysPressed[68] !== "undefined" && keysPressed[68] != false) {
 				players[pid].x += 1;
-				socket.emit("move", { playerid: pid, x: players[pid].x, y: players[pid].y });
+				socket.emit("move", { pid: pid, x: players[pid].x, y: players[pid].y });
 			}
 
 			for (var i in players) {
@@ -87,10 +85,10 @@
 			world.render(canvas);
 
 			for (var i in players) {
-				players[i].render(canvas);
+				players[i].render(i, canvas);
 			}
 		} else {
-			canvas.fillText("Connecting...", 100, 100);
+			canvas.fillText("Connecting...", 0, 0);
 		}
 	}
 
